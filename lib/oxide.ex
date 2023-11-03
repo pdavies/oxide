@@ -26,4 +26,7 @@ defmodule Oxide.Result do
 
   def map_or({:ok, t}, _default, f), do: f.(t)
   def map_or({:error, _}, default, _f), do: default
+
+  def and_then({:ok, t}, f), do: f.(t)
+  def and_then({:error, e}, _f), do: {:error, e}
 end
