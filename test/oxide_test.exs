@@ -1,8 +1,5 @@
 defmodule OxideTest do
+  alias Oxide.Result
   use ExUnit.Case
-  doctest Oxide
-
-  test "greets the world" do
-    assert Oxide.hello() == :world
-  end
+  doctest Oxide.Result
 end
