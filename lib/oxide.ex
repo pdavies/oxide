@@ -7,8 +7,8 @@ defmodule Oxide.Result do
   def is_error?({:ok, _}), do: false
   def is_error?({:error, _}), do: true
 
-  def unwrap({:ok, t}), do: t
-  def unwrap({:error, e}), do: raise(e)
+  def unwrap!({:ok, t}), do: t
+  def unwrap!({:error, e}), do: raise(e)
 
   def unwrap_or({:ok, t}, _default), do: t
   def unwrap_or({:error, _}, default), do: default
@@ -16,8 +16,8 @@ defmodule Oxide.Result do
   def unwrap_or_else({:ok, t}, _f), do: t
   def unwrap_or_else({:error, _}, f), do: f.()
 
-  def unwrap_err({:ok, _}), do: raise("called `Result.unwrap_err()` on an `:ok` value")
-  def unwrap_err({:error, e}), do: e
+  def unwrap_err!({:ok, _}), do: raise("called `Result.unwrap_err()` on an `:ok` value")
+  def unwrap_err!({:error, e}), do: e
 
   # def expect_err
 
