@@ -29,4 +29,30 @@ defmodule Oxide.Result do
 
   def and_then({:ok, t}, f), do: f.(t)
   def and_then({:error, e}, _f), do: {:error, e}
+
+  @doc ~S"""
+  Result pipe operator.
+
+  The result pipe operator `~>` is a result-aware analogue to the pipe operator `|>`.
+  It allows chaining functions that return results, piping the inner value of `:ok` results
+  and short-circuiting the pipeline if any of the functions return an error. For example
+
+      with {:ok, x1} <- f1(x),
+           {:ok, x2} <- f2(x1) do
+        f3(x2)
+      end
+
+  can be written as
+
+      x |> f1() ~> f2() ~> f3()
+
+  """
+  defmacro left ~> right do
+    quote do
+      case unquote(left) do
+        {:ok, t} -> t |> unquote(right)
+        {:error, e} -> {:error, e}
+      end
+    end
+  end
 end
