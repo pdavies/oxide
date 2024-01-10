@@ -25,6 +25,8 @@ defmodule Oxide.Result do
   def is_ok?({:ok, _}), do: true
   def is_ok?({:error, _}), do: false
 
+  def ok(t), do: {:ok, t}
+
   @doc ~S"""
   ## Examples
 
@@ -39,6 +41,8 @@ defmodule Oxide.Result do
   def is_error?(result)
   def is_error?({:ok, _}), do: false
   def is_error?({:error, _}), do: true
+
+  def error(e), do: {:error, e}
 
   def unwrap!(result)
   def unwrap!({:ok, t}), do: t
