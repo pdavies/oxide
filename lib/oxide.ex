@@ -25,6 +25,9 @@ defmodule Oxide.Result do
   def is_ok?({:ok, _}), do: true
   def is_ok?({:error, _}), do: false
 
+  @doc ~S"""
+  Wrap a value in an ok result.
+  """
   def ok(t), do: {:ok, t}
 
   @doc ~S"""
@@ -42,6 +45,9 @@ defmodule Oxide.Result do
   def is_error?({:ok, _}), do: false
   def is_error?({:error, _}), do: true
 
+  @doc ~S"""
+  Wrap a value in an error result.
+  """
   def error(e), do: {:error, e}
 
   def unwrap!(result)
@@ -69,6 +75,10 @@ defmodule Oxide.Result do
   def map_or(result, default, f)
   def map_or({:ok, t}, _default, f), do: f.(t)
   def map_or({:error, _}, default, _f), do: default
+
+  def map_err(result, f)
+  def map_err({:ok, t}, _f), do: {:ok, t}
+  def map_err({:error, e}, f), do: {:error, f.(e)}
 
   def and_then(result, f)
   def and_then({:ok, t}, f), do: f.(t)
