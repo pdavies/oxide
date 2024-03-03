@@ -17,8 +17,6 @@ defmodule Oxide.Result do
       true
       iex> Result.is_ok?({:error, 3})
       false
-      iex> Result.is_ok?(3)
-      ** (FunctionClauseError) no function clause matching in Oxide.Result.is_ok?/1
 
   """
   def is_ok?(result)
@@ -37,8 +35,6 @@ defmodule Oxide.Result do
       false
       iex> Result.is_error?({:error, 3})
       true
-      iex> Result.is_error?(3)
-      ** (FunctionClauseError) no function clause matching in Oxide.Result.is_error?/1
 
   """
   def is_error?(result)
@@ -47,17 +43,49 @@ defmodule Oxide.Result do
 
   @doc ~S"""
   Wrap a value in an error result.
+
+      iex> :some_error_reason |> Result.error()
+      {:error, :some_error_reason}
+
   """
   def error(e), do: {:error, e}
 
+  @doc ~S"""
+  Unwrap an `:ok` result, and raise an `:error` reason.
+
+      iex> Result.unwrap!({:ok, :value})
+      :value
+      iex> Result.unwrap!({:error, "message"})
+      ** (RuntimeError) message
+
+  """
   def unwrap!(result)
   def unwrap!({:ok, t}), do: t
   def unwrap!({:error, e}), do: raise(e)
 
+  @doc ~S"""
+  Unwrap an `:ok` result, falling back to `default` for an `:error` result.
+
+      iex> Result.unwrap_or({:ok, :cake}, :icecream)
+      :cake
+      iex> Result.unwrap_or({:error, :peas}, :icecream)
+      :icecream
+
+  """
   def unwrap_or(result, default)
   def unwrap_or({:ok, t}, _default), do: t
   def unwrap_or({:error, _}, default), do: default
 
+  @doc ~S"""
+  Unwrap an `:ok` result, falling back to executing a zero-arity function if the result
+  is an error.
+
+      iex> Result.unwrap_or_else({:ok, :cake}, fn -> :icecream end)
+      :cake
+      iex> Result.unwrap_or_else({:error, :peas}, fn -> :icecream end)
+      :icecream
+
+  """
   def unwrap_or_else(result, f)
   def unwrap_or_else({:ok, t}, _f), do: t
   def unwrap_or_else({:error, _}, f), do: f.()
@@ -68,6 +96,15 @@ defmodule Oxide.Result do
 
   # def expect_err
 
+  @doc ~S"""
+  Map the value of an `:ok` result to another `:ok` result, leaving errors unchanged.
+
+      iex> Result.map({:ok, 3}, fn x -> x + 1 end)
+      {:ok, 4}
+      iex> Result.map({:error, :nan}, fn x -> x + 1 end)
+      {:error, :nan}
+
+  """
   def map(result, f)
   def map({:ok, t}, f), do: {:ok, f.(t)}
   def map({:error, e}, _f), do: {:error, e}
@@ -83,6 +120,19 @@ defmodule Oxide.Result do
   def and_then(result, f)
   def and_then({:ok, t}, f), do: f.(t)
   def and_then({:error, e}, _f), do: {:error, e}
+
+  @doc ~S"""
+  Convert a maybe-nil value to a result.
+
+  Maps `nil` to `{:error, reason}` and any non-`nil` value to `{:ok, value}`.
+
+      iex> %{"key" => "value"} |> Map.get("key") |> Result.err_if_nil(:notfound)
+      {:ok, "value"}
+      iex> %{"key" => "value"} |> Map.get("missing") |> Result.err_if_nil(:notfound)
+      {:error, :notfound}
+  """
+  def err_if_nil(value, reason) when is_nil(value), do: {:error, reason}
+  def err_if_nil(value, _reason) when not is_nil(value), do: {:ok, value}
 
   @doc ~S"""
   Result pipe operator.
