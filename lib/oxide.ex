@@ -11,7 +11,7 @@ defmodule Oxide.Result do
   """
 
   @doc ~S"""
-  ## Examples
+  Return whether a result is ok.
 
       iex> Result.is_ok?({:ok, 3})
       true
@@ -29,7 +29,7 @@ defmodule Oxide.Result do
   def ok(t), do: {:ok, t}
 
   @doc ~S"""
-  ## Examples
+  Return whether a result is an error.
 
       iex> Result.is_error?({:ok, 3})
       false
