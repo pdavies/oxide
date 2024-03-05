@@ -135,7 +135,7 @@ defmodule Oxide.Result do
   # def expect_err
 
   @doc ~S"""
-  Map the value of an `:ok` result to another `:ok` result, leaving errors unchanged.
+  Return a result leaving errors unchanged but transforming the value of an `:ok` result.
 
       iex> Result.map({:ok, 3}, fn x -> x + 1 end)
       {:ok, 4}
@@ -148,15 +148,33 @@ defmodule Oxide.Result do
   def map({:ok, t}, f), do: {:ok, f.(t)}
   def map({:error, e}, _f), do: {:error, e}
 
-  @spec map_or(t(), any(), (any() -> any())) :: any()
-  def map_or(result, default, f)
-  def map_or({:ok, t}, _default, f), do: f.(t)
-  def map_or({:error, _}, default, _f), do: default
+  @doc ~S"""
+  Return a result leaving ok values unchanged but transforming an error reason with `f`.
 
+      iex> Result.map_err({:ok, 3}, fn x -> x + 1 end)
+      {:ok, 3}
+      iex> Result.map_err({:error, :nan}, &:erlang.atom_to_binary/1)
+      {:error, "nan"}
+
+  """
   @spec map_err(t(), (any() -> any())) :: t()
   def map_err(result, f)
   def map_err({:ok, t}, _f), do: {:ok, t}
   def map_err({:error, e}, f), do: {:error, f.(e)}
+
+  @doc ~S"""
+  Return an _unwrapped_ ok value transformed by f, or `default` if `result` is an error.
+
+      iex> Result.map_or({:ok, 3}, 0, fn x -> x + 1 end)
+      4
+      iex> Result.map_or({:error, :nan}, 0, fn x -> x + 1 end)
+      0
+
+  """
+  @spec map_or(t(), any(), (any() -> any())) :: any()
+  def map_or(result, default, f)
+  def map_or({:ok, t}, _default, f), do: f.(t)
+  def map_or({:error, _}, default, _f), do: default
 
   @spec and_then(t(), (any() -> any())) :: any()
   def and_then(result, f)
@@ -172,6 +190,7 @@ defmodule Oxide.Result do
       {:ok, "value"}
       iex> %{"key" => "value"} |> Map.get("missing") |> Result.err_if_nil(:notfound)
       {:error, :notfound}
+
   """
   @spec err_if_nil(any(), any()) :: t()
   def err_if_nil(value, reason)
