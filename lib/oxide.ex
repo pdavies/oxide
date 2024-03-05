@@ -196,4 +196,47 @@ defmodule Oxide.Result do
   def err_if_nil(value, reason)
   def err_if_nil(value, reason) when is_nil(value), do: {:error, reason}
   def err_if_nil(value, _reason) when not is_nil(value), do: {:ok, value}
+
+  @doc ~S"""
+  Equivalent to `Kernel.tap/2` for ok results.
+
+  Calls `f` with the value of an `:ok` result, and returns the result unchanged.
+
+      iex> {:ok, 3} |> Result.tap_ok(&IO.inspect/1)
+      3
+      {:ok, 3}
+      iex> {:error, :oops} |> Result.tap_ok(&IO.inspect/1)
+      {:error, :oops}
+
+  """
+  @spec tap_ok(t(), (any() -> any())) :: t()
+  def tap_ok(result, f)
+
+  def tap_ok({:ok, t}, f) do
+    f.(t)
+    {:ok, t}
+  end
+
+  def tap_ok({:error, e}, _f), do: {:error, e}
+
+  @doc ~S"""
+  Equivalent to `Kernel.tap/2` for error results.
+
+  Calls `f` with the reason of an `:error` result, and returns the result unchanged.
+
+      iex> {:ok, 3} |> Result.tap_err(&IO.inspect/1)
+      {:ok, 3}
+      iex> {:error, :oops} |> Result.tap_err(&IO.inspect/1)
+      :oops
+      {:error, :oops}
+
+  """
+  @spec tap_err(t(), (any() -> any())) :: t()
+  def tap_err(result, f)
+  def tap_err({:ok, t}, _f), do: {:ok, t}
+
+  def tap_err({:error, e}, f) do
+    f.(e)
+    {:error, e}
+  end
 end
