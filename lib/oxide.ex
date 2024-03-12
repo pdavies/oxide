@@ -17,7 +17,7 @@ defmodule Oxide.Result do
   @doc ~S"""
   Result pipe operator.
 
-  The result pipe operator `~>` is a result-aware analogue to the pipe operator `|>`.
+  The result pipe operator `&&&/2` is a result-aware analogue to the pipe operator `|>`.
   It allows chaining functions that return results, piping the inner value of `:ok` results
   and short-circuiting the pipeline if any of the functions return an error. For example
 
@@ -28,10 +28,10 @@ defmodule Oxide.Result do
 
   can be written as
 
-      x |> f1() ~> f2() ~> f3()
+      x |> f1() &&& f2() &&& f3()
 
   """
-  defmacro left ~> right do
+  defmacro left &&& right do
     quote do
       case unquote(left) do
         {:ok, t} -> t |> unquote(right)

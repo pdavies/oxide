@@ -2,7 +2,7 @@
 
 Oxide is a library of helpers for working ergonomically with result tuples `{:ok, value}` and
 `{:error, reason}`. Most of its functions are direct equivalents to those in the Rust standard library,
-and it also introduces  `~>` - a result-aware variant of the pipe operator
+and it also introduces  `&&&` - a result-aware variant of the pipe operator
 `|>` - as an Elixir analogue to Rust's unary `?` operator.
 
 > #### Warning {: .warning}
@@ -24,7 +24,7 @@ with {:ok, x1} <- f1(x),
 end
 
 # After
-x |> f1() ~> f2() ~> f3()
+x |> f1() &&& f2() &&& f3()
 ```
 
 ### Acting on :ok values
@@ -35,7 +35,7 @@ x |> f1() ~> f2() ~> f3()
 returns_result() |> Result.map(fn val -> val + 1 end)
 ```
 
-## Doesn't `~>` duplicate `with`?
+## Doesn't `&&&` duplicate `with`?
 
 The developer ergonomics of `with` are a two-phase construct with a context initalization phase
 (`with <...>`) followed by an inner execution phase (`do <...> end`). It's extremely natural
@@ -77,10 +77,10 @@ In comparison with the pipeline, the `with` syntax is somewhat unnatural:
 * we must explicitly pass around arguments that would be elided in a pipeline
 * we've added a layer of nesting to our code
 
-The point of `~>` is to recover the natural pipeline expression:
+The point of `&&&` is to recover the natural pipeline expression:
 
 ```elixir
 read_line(socket)
-~> KVServer.Command.parse()
-~> KVServer.Command.run()
+&&& KVServer.Command.parse()
+&&& KVServer.Command.run()
 ```
