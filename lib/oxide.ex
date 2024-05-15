@@ -57,7 +57,7 @@ defmodule Oxide.Result do
   @doc ~S"""
   Wrap a value in an ok result.
   """
-  @spec ok(any()) :: t()
+  @spec ok(v) :: {:ok, v} when v: var
   def ok(t), do: {:ok, t}
 
   @doc ~S"""
@@ -81,7 +81,7 @@ defmodule Oxide.Result do
       {:error, :some_error_reason}
 
   """
-  @spec error(any()) :: t()
+  @spec error(e) :: {:error, e} when e: var
   def error(e), do: {:error, e}
 
   @doc ~S"""
@@ -93,7 +93,7 @@ defmodule Oxide.Result do
       ** (RuntimeError) message
 
   """
-  @spec unwrap!(t()) :: any()
+  @spec unwrap!(t(v)) :: v when v: var
   def unwrap!(result)
   def unwrap!({:ok, t}), do: t
   def unwrap!({:error, e}), do: raise(e)
@@ -107,7 +107,7 @@ defmodule Oxide.Result do
       :icecream
 
   """
-  @spec unwrap_or(t(), any()) :: any()
+  @spec unwrap_or(t(v), w) :: v | w when v: var, w: var
   def unwrap_or(result, default)
   def unwrap_or({:ok, t}, _default), do: t
   def unwrap_or({:error, _}, default), do: default
@@ -122,12 +122,12 @@ defmodule Oxide.Result do
       :icecream
 
   """
-  @spec unwrap_or_else(t(), (-> any())) :: any()
+  @spec unwrap_or_else(t(v), (-> w)) :: v | w when v: var, w: var
   def unwrap_or_else(result, f)
   def unwrap_or_else({:ok, t}, _f), do: t
   def unwrap_or_else({:error, _}, f), do: f.()
 
-  @spec unwrap_err!(t()) :: any()
+  @spec unwrap_err!(t(any, e)) :: e when e: var
   def unwrap_err!(result)
   def unwrap_err!({:ok, _}), do: raise("called `Result.unwrap_err()` on an `:ok` value")
   def unwrap_err!({:error, e}), do: e
@@ -143,7 +143,7 @@ defmodule Oxide.Result do
       {:error, :nan}
 
   """
-  @spec map(t(), (any() -> any())) :: t()
+  @spec map(t(v, e), (v -> w)) :: t(w, e) when v: var, w: var, e: var
   def map(result, f)
   def map({:ok, t}, f), do: {:ok, f.(t)}
   def map({:error, e}, _f), do: {:error, e}
@@ -157,7 +157,7 @@ defmodule Oxide.Result do
       {:error, "nan"}
 
   """
-  @spec map_err(t(), (any() -> any())) :: t()
+  @spec map_err(t(v, e), (e -> f)) :: t(v, f) when v: var, e: var, f: var
   def map_err(result, f)
   def map_err({:ok, t}, _f), do: {:ok, t}
   def map_err({:error, e}, f), do: {:error, f.(e)}
@@ -171,15 +171,29 @@ defmodule Oxide.Result do
       0
 
   """
-  @spec map_or(t(), any(), (any() -> any())) :: any()
+  @spec map_or(t(v, any()), w, (v -> x)) :: x | w when v: var, w: var, x: var
   def map_or(result, default, f)
   def map_or({:ok, t}, _default, f), do: f.(t)
   def map_or({:error, _}, default, _f), do: default
 
-  @spec and_then(t(), (any() -> any())) :: any()
+  @spec and_then(t(v, e), (v -> w)) :: w | {:error, e} when v: var, w: var, e: var
   def and_then(result, f)
   def and_then({:ok, t}, f), do: f.(t)
   def and_then({:error, e}, _f), do: {:error, e}
+
+  @doc ~S"""
+  Return an ok result unchanged, or transform an unwrapped error reason with `f`.
+
+      iex> Result.or_else({:ok, :xylophone}, fn err -> err + 1 end)
+      {:ok, :xylophone}
+      iex> Result.or_else({:error, 3}, fn err -> err + 1 end)
+      4
+
+  """
+  @spec or_else(t(v, e), (e -> f)) :: {:ok, v} | f when v: var, e: var, f: var
+  def or_else(result, f)
+  def or_else({:ok, t}, _f), do: {:ok, t}
+  def or_else({:error, e}, f), do: f.(e)
 
   @doc ~S"""
   Convert a maybe-nil value to a result.
@@ -192,7 +206,7 @@ defmodule Oxide.Result do
       {:error, :notfound}
 
   """
-  @spec err_if_nil(any(), any()) :: t()
+  @spec err_if_nil(v | nil, e) :: t(v, e) when v: var, e: var
   def err_if_nil(value, reason)
   def err_if_nil(value, reason) when is_nil(value), do: {:error, reason}
   def err_if_nil(value, _reason) when not is_nil(value), do: {:ok, value}
@@ -209,7 +223,7 @@ defmodule Oxide.Result do
       {:error, :oops}
 
   """
-  @spec tap_ok(t(), (any() -> any())) :: t()
+  @spec tap_ok(t(v), (v -> any())) :: t(v) when v: var
   def tap_ok(result, f)
 
   def tap_ok({:ok, t}, f) do
@@ -231,7 +245,7 @@ defmodule Oxide.Result do
       {:error, :oops}
 
   """
-  @spec tap_err(t(), (any() -> any())) :: t()
+  @spec tap_err(t(v, e), (e -> any())) :: t(v, e) when v: var, e: var
   def tap_err(result, f)
   def tap_err({:ok, t}, _f), do: {:ok, t}
 
