@@ -30,6 +30,17 @@ defmodule Oxide.Result do
 
       x |> f1() &&& f2() &&& f3()
 
+  More examples:
+
+      iex> {:ok, :foo} &&& Atom.to_string()
+      "foo"
+      iex> {:ok, 3} &&& then(fn x -> {:ok, x + 1} end) &&& List.wrap()
+      [4]
+      iex> {:ok, :foo} &&& Atom.to_string() |> String.capitalize()
+      "Foo"
+      iex> {:error, :oops} &&& Atom.to_string() |> String.capitalize()
+      {:error, :oops}
+
   """
   defmacro left &&& right do
     quote do
@@ -270,5 +281,45 @@ defmodule Oxide.Result do
   def collect(results) do
     Enum.find(results, false, fn r -> is_error?(r) end) ||
       results |> Enum.map(&unwrap!/1) |> ok()
+  end
+end
+
+defmodule Oxide.Result.Dangerous do
+  @moduledoc """
+  Result helpers you should use with extreme care, or better yet, not at all.
+  """
+
+  @doc ~S"""
+  Dangerous result pipe operator.
+
+  The result pipe operator `~>/2` is defined identically to `Oxide.Result.&&&/2`, and in
+  many circumstances behaves the same:
+
+      iex> {:ok, :foo} ~> Atom.to_string()
+      "foo"
+      iex> {:ok, 3} ~> then(fn x -> {:ok, x + 1} end) ~> List.wrap()
+      [4]
+      iex> {:ok, :foo} ~> Atom.to_string() |> String.capitalize()
+      "Foo"
+      iex> {:error, :oops} ~> then(fn x -> {:ok, x + 1} end) ~> List.wrap()
+      {:error, :oops}
+
+  However, Elixir's operator precedence means that when `~>` is followed by `|>`,
+  an early error can pipe into later stages of the pipeline in a way that is
+  almost never what you want.
+
+      iex> {:error, :oops} &&& Atom.to_string() |> String.capitalize()
+      {:error, :oops}
+      iex> {:error, :oops} ~> Atom.to_string() |> String.capitalize()  # String.capitalize({:error, :oops})
+      ** (FunctionClauseError) no function clause matching in String.capitalize/2
+
+  """
+  defmacro left ~> right do
+    quote do
+      case unquote(left) do
+        {:ok, t} -> t |> unquote(right)
+        {:error, e} -> {:error, e}
+      end
+    end
   end
 end
