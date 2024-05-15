@@ -253,4 +253,22 @@ defmodule Oxide.Result do
     f.(e)
     {:error, e}
   end
+
+  @doc ~S"""
+  Collects a list of results into a single result.
+
+  If any of the results is an error, the first error is returned. Otherwise, a single
+  ok result is returned with a list of the result values.
+
+      iex> [{:ok, 1}, {:ok, 2}, {:ok, 3}] |> Result.collect()
+      {:ok, [1, 2, 3]}
+      iex> [{:ok, 1}, {:error, 2}, {:ok, 3}, {:error, 4}] |> Result.collect()
+      {:error, 2}
+
+  """
+  @spec collect([t()]) :: t()
+  def collect(results) do
+    Enum.find(results, false, fn r -> is_error?(r) end) ||
+      results |> Enum.map(&unwrap!/1) |> ok()
+  end
 end
