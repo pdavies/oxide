@@ -96,18 +96,18 @@ defmodule Oxide.Result do
   def error(e), do: {:error, e}
 
   @doc ~S"""
-  Unwrap an `:ok` result, and raise an `:error` reason.
+  Unwrap an `:ok` result, and raise an `:error` reason as a `RuntimeError`.
 
       iex> Result.unwrap!({:ok, :value})
       :value
-      iex> Result.unwrap!({:error, "message"})
-      ** (RuntimeError) message
+      iex> Result.unwrap!({:error, %{code: 500}})
+      ** (RuntimeError) Unwrapped an error: %{code: 500}
 
   """
   @spec unwrap!(t(v)) :: v when v: var
   def unwrap!(result)
   def unwrap!({:ok, t}), do: t
-  def unwrap!({:error, e}), do: raise(e)
+  def unwrap!({:error, e}), do: raise("Unwrapped an error: #{inspect(e)}")
 
   @doc ~S"""
   Unwrap an `:ok` result, falling back to `default` for an `:error` result.
