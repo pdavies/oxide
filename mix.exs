@@ -1,7 +1,7 @@
 defmodule Oxide.MixProject do
   use Mix.Project
 
-  @version "0.4.2"
+  @version "0.5.0"
   @source_url "https://github.com/pdavies/oxide"
 
   def project do
@@ -28,7 +28,6 @@ defmodule Oxide.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.30.9", only: :dev, runtime: false}
-      # {:earmark, "~> 1.4", only: :dev, runtime: false}
     ]
   end
 

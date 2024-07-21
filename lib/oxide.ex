@@ -51,6 +51,52 @@ defmodule Oxide.Result do
     end
   end
 
+  @doc """
+  Returns true if the given value is a result tuple.
+
+      iex> Result.result?({:ok, 42})
+      true
+      iex> Result.result?({:error, :not_found})
+      true
+      iex> Result.result?(42)
+      false
+      iex> Result.result?({:ok, 42, 43})
+      false
+      iex> Result.result?(:ok)
+      false
+
+  """
+  @spec result?(any()) :: boolean()
+  def result?(maybe_result)
+  def result?({:ok, _}), do: true
+  def result?({:error, _}), do: true
+  def result?(_), do: false
+
+  @doc """
+  Assert a result.
+
+  Returns the value unchanged if it is a result; raises `RuntimeError` otherwise.
+
+      iex> Result.assert_result!({:ok, 42})
+      {:ok, 42}
+      iex> Result.assert_result!({:error, :not_found})
+      {:error, :not_found}
+      iex> Result.assert_result!(42)
+      ** (RuntimeError) Not a result
+
+      iex> Result.assert_result!({:ok, 42, 43})
+      ** (RuntimeError) Not a result
+
+      iex> Result.assert_result!(:ok)
+      ** (RuntimeError) Not a result
+
+  """
+  @spec assert_result!(any()) :: t() | no_return()
+  def assert_result!(maybe_result)
+  def assert_result!({:ok, value}), do: {:ok, value}
+  def assert_result!({:error, reason}), do: {:error, reason}
+  def assert_result!(_), do: raise("Not a result")
+
   @doc ~S"""
   Return whether a result is ok.
 
@@ -67,6 +113,12 @@ defmodule Oxide.Result do
 
   @doc ~S"""
   Wrap a value in an ok result.
+
+      iex> 3 |> Result.ok()
+      {:ok, 3}
+      iex> Result.ok({:ok, 3})
+      {:ok, {:ok, 3}}
+
   """
   @spec ok(v) :: {:ok, v} when v: var
   def ok(t), do: {:ok, t}
