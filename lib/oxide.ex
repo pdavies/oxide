@@ -268,17 +268,26 @@ defmodule Oxide.Result do
   @doc ~S"""
   Convert a maybe-nil value to a result.
 
-  Maps `nil` to `{:error, reason}` and any non-`nil` value to `{:ok, value}`.
+  Maps `nil` and `{:ok, nil}` to `{:error, reason}`, passes errors through and otherwise maps `value`, or {:ok, value}` to `{:ok, value}`.
 
       iex> %{"key" => "value"} |> Map.get("key") |> Result.err_if_nil(:notfound)
       {:ok, "value"}
       iex> %{"key" => "value"} |> Map.get("missing") |> Result.err_if_nil(:notfound)
       {:error, :notfound}
+      iex> {:ok, nil} |> Result.err_if_nil(:notfound)
+      {:error, :notfound}
+      iex> {:ok, "value"} |> Result.err_if_nil(:notfound)
+      {:ok, "value"}
+      iex> {:error, :badthing} |> Result.err_if_nil(:notfound)
+      {:error, :badthing}
 
   """
   @spec err_if_nil(v | nil, e) :: t(v, e) when v: var, e: var
   def err_if_nil(value, reason)
   def err_if_nil(value, reason) when is_nil(value), do: {:error, reason}
+  def err_if_nil({:ok, value}, reason) when is_nil(value), do: {:error, reason}
+  def err_if_nil({:ok, value}, _reason) when not is_nil(value), do: {:ok, value}
+  def err_if_nil({:error, reason}, _reason), do: {:error, reason}
   def err_if_nil(value, _reason) when not is_nil(value), do: {:ok, value}
 
   @doc ~S"""
