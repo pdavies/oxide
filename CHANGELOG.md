@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2024-12-20
+
+### Breaking
+
+- Rename `is_ok?` to `ok?` and `is_error?` to `error?` for better consistency with Elixir
+  conventions
+- Change `Result.unwrap_or_else/2` to accept a 1-arity function that takes the error, instead
+  of a zero-arity function that returns a default value.
+
+### Added
+
+- Added `Result.any?/1` and `Result.all?/1`
+
+### Fixed
+
+- Fixed one or two missing docstrings
+
 ## [0.5.0] - 2024-07-21
 
 ### Added

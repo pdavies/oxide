@@ -7,7 +7,7 @@ defmodule Oxide.Result do
   Helpers for working with result tuples, `{:ok, value}` and `{:error, reason}`.
 
   Unless otherwise stated, functions raise `FunctionClauseError` when given an unexpected
-  non-result.
+  non-result. `:ok`, `:error`, `{:ok, value1, value2}`, etc. are not considered results.
   """
 
   @type t :: {:ok, any()} | {:error, any()}
@@ -100,16 +100,16 @@ defmodule Oxide.Result do
   @doc ~S"""
   Return whether a result is ok.
 
-      iex> Result.is_ok?({:ok, 3})
+      iex> Result.ok?({:ok, 3})
       true
-      iex> Result.is_ok?({:error, 3})
+      iex> Result.ok?({:error, 3})
       false
 
   """
-  @spec is_ok?(t()) :: boolean
-  def is_ok?(result)
-  def is_ok?({:ok, _}), do: true
-  def is_ok?({:error, _}), do: false
+  @spec ok?(t()) :: boolean
+  def ok?(result)
+  def ok?({:ok, _}), do: true
+  def ok?({:error, _}), do: false
 
   @doc ~S"""
   Wrap a value in an ok result.
@@ -126,16 +126,16 @@ defmodule Oxide.Result do
   @doc ~S"""
   Return whether a result is an error.
 
-      iex> Result.is_error?({:ok, 3})
+      iex> Result.error?({:ok, 3})
       false
-      iex> Result.is_error?({:error, 3})
+      iex> Result.error?({:error, 3})
       true
 
   """
-  @spec is_error?(t()) :: boolean
-  def is_error?(result)
-  def is_error?({:ok, _}), do: false
-  def is_error?({:error, _}), do: true
+  @spec error?(t()) :: boolean
+  def error?(result)
+  def error?({:ok, _}), do: false
+  def error?({:error, _}), do: true
 
   @doc ~S"""
   Wrap a value in an error result.
@@ -146,6 +146,28 @@ defmodule Oxide.Result do
   """
   @spec error(e) :: {:error, e} when e: var
   def error(e), do: {:error, e}
+
+  @doc ~S"""
+  Return true if an enumerable of results are all `ok`.
+
+      iex> Result.all?([{:ok, 1}, {:ok, 2}])
+      true
+      iex> Result.all?([{:ok, 1}, {:error, 2}])
+      false
+  """
+  @spec all?([t()]) :: boolean
+  def all?(results), do: Enum.all?(results, &ok?/1)
+
+  @doc ~S"""
+  Return true if any of an enumerable of results is `ok`.
+
+      iex> Result.any?([{:ok, 1}, {:error, 2}])
+      true
+      iex> Result.any?([{:error, 1}, {:error, 2}])
+      false
+  """
+  @spec any?([t()]) :: boolean
+  def any?(results), do: Enum.any?(results, &ok?/1)
 
   @doc ~S"""
   Unwrap an `:ok` result, and raise an `:error` reason.
@@ -183,19 +205,18 @@ defmodule Oxide.Result do
   def unwrap_or({:error, _}, default), do: default
 
   @doc ~S"""
-  Unwrap an `:ok` result, falling back to executing a zero-arity function if the result
-  is an error.
+  Unwrap an `:ok` result, or else act on the error in some way.
 
-      iex> Result.unwrap_or_else({:ok, :cake}, fn -> :icecream end)
-      :cake
-      iex> Result.unwrap_or_else({:error, :peas}, fn -> :icecream end)
-      :icecream
+      iex> Result.unwrap_or_else({:ok, 0}, fn e -> e + 1000 end)
+      0
+      iex> Result.unwrap_or_else({:error, 0}, fn e -> e + 1000 end)
+      1000
 
   """
-  @spec unwrap_or_else(t(v), (-> w)) :: v | w when v: var, w: var
+  @spec unwrap_or_else(t(v, e), (e -> w)) :: v | w when v: var, w: var, e: var
   def unwrap_or_else(result, f)
   def unwrap_or_else({:ok, t}, _f), do: t
-  def unwrap_or_else({:error, _}, f), do: f.()
+  def unwrap_or_else({:error, e}, f), do: f.(e)
 
   @spec unwrap_err!(t(any, e)) :: e when e: var
   def unwrap_err!(result)
@@ -205,11 +226,13 @@ defmodule Oxide.Result do
   # def expect_err
 
   @doc ~S"""
-  Return a result leaving errors unchanged but transforming the value of an `:ok` result.
+  Transform a result, mapping an ok value with `f` and leaving errors unchanged.
 
-      iex> Result.map({:ok, 3}, fn x -> x + 1 end)
+  Similar to `and_then/2` and useful for transformations that don't return a result.
+
+      iex> {:ok, 3} |> Result.map(fn x -> x + 1 end)
       {:ok, 4}
-      iex> Result.map({:error, :nan}, fn x -> x + 1 end)
+      iex> {:error, :nan} |> Result.map(fn x -> x + 1 end)
       {:error, :nan}
 
   """
@@ -246,6 +269,18 @@ defmodule Oxide.Result do
   def map_or({:ok, t}, _default, f), do: f.(t)
   def map_or({:error, _}, default, _f), do: default
 
+  @doc ~S"""
+  Transform an unwrapped ok value with `f`, or return an error unchanged.
+
+  Similar to `map/2` except the transformed value is returned unwrapped. Useful when passing
+  a result into another function that returns a result.
+
+      iex> {:ok, 3} |> Result.and_then(fn x -> x + 1 end)
+      4
+      iex> {:error, :nan} |> Result.and_then(fn x -> x + 1 end)
+      {:error, :nan}
+
+  """
   @spec and_then(t(v, e), (v -> w)) :: w | {:error, e} when v: var, w: var, e: var
   def and_then(result, f)
   def and_then({:ok, t}, f), do: f.(t)
@@ -338,7 +373,7 @@ defmodule Oxide.Result do
   """
   @spec collect([t()]) :: t()
   def collect(results) do
-    Enum.find(results, false, fn r -> is_error?(r) end) ||
+    Enum.find(results, false, fn r -> error?(r) end) ||
       results |> Enum.map(&unwrap!/1) |> ok()
   end
 end
